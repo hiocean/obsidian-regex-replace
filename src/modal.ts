@@ -12,47 +12,52 @@ export class FindAndReplaceModal extends Modal {
 	settings: RegexReplaceSettings;
 	editor: Editor;
 	plugin: RegexFindReplacePlugin;
-	newUIContainer: HTMLElement;
-	storeUIContainer: HTMLElement;
+	CreatContainer: HTMLElement;
+	StoredContainer: HTMLElement;
 
 	onOpen() {
-		
-		this.modalEl.style.width = "600px";
-		this.titleEl.setText('Regex Find/Replace');
+		this.contentEl.empty();
 
-		this.newUIContainer = this.contentEl.createDiv();
-		this.storeUIContainer = this.contentEl.createDiv();
+		this.modalEl.style.width = "600px";
+		this.titleEl.setText('RegEx Find/Replace 正则替换');
+		this.CreatContainer = this.contentEl.createDiv();
+		this.StoredContainer = this.contentEl.createDiv();
 
 		const additional = this.settings.prefillFind && this.editor.getSelection()
-			? { findText: this.editor.getSelection(), }
-			: {};
-		
-		this.newRegexUI({ container: this.newUIContainer, additional });
-		this.showStored({ container: this.storeUIContainer });
+			? { findText: this.editor.getSelection(), selectionOnly: true }
+			: { selectionOnly: false };
+
+		this.showCreateRegexUI({ additional });
+		this.showStoredRegexUI();
 
 	}
-	private resetUI(index: number = -1) {
-		// this.contentEl.empty();
-		// this.display(index);
-		this.newUIContainer.empty()
-		this.newRegexUI({ container: this.newUIContainer, index });
-	}
+	private showStoredRegexUI(open: boolean = false): void {
+		this.StoredContainer.empty();
+		const details = this.StoredContainer.createEl("details");
+		if (open) details.setAttribute('open', 'true')
+		const summary = details.createEl("summary");
+		summary.setText("Replacement history (替换历史)");
 
-	private showStored({ container }: { container: HTMLElement; }): void {
-		container.createEl('h4', { text: "History" });
-		this.settings.regExEntires.forEach((regex, index) => {
-			this.regexRow(container, index);//todo adjust the numbers.
-		});
+		details.ontoggle = () => {
+			if (details.open) {
+
+				if (this.settings.entryOrder.length >= 10) { new Notice("More than 10 results, delete some!") }
+				this.settings.entryOrder.slice().reverse().forEach(key => {
+					this.showOneRegexRow(details, key);
+				});
+			};
+		};
 	}
 
 	private getColor(enabled: boolean) {
 		return enabled ? "var(--interactive-accent)" : "var(--interactive-normal)"
 	}
 
-	private newRegexUI({ container, index = -1, additional = {} }: {
-		container: HTMLElement; index?: number; additional?: object;
-	}) {
-		const regex: RegExEntry = index == -1 ? Object.assign(defaultRegExEntry, additional) : this.settings.regExEntires[index];
+	private showCreateRegexUI({ key = '', additional = {} }: { key?: string; additional?: object; }) {
+
+		const container = this.CreatContainer; container.empty();
+
+		const regex: RegExEntry = Object.assign({}, defaultRegExEntry, (key ? this.settings.regExEntires[key] : additional));
 
 		container.createEl('h4', { text: "New" });
 		new Setting(container)
@@ -87,6 +92,7 @@ export class FindAndReplaceModal extends Modal {
 					.onChange((value) => { regex.replaceText = value; });
 				cb.inputEl.style.width = "450px"
 			})
+
 		new Setting(container)
 			.setDesc(`Description:`)
 			.addText((cb) => {
@@ -107,14 +113,18 @@ export class FindAndReplaceModal extends Modal {
 			.addExtraButton((cb) => {
 				cb.setIcon('refresh-cw')
 					.setTooltip('Rewrite')
-					.onClick(() => { this.resetUI(); });
+					.onClick(() => { this.showCreateRegexUI({}); });
 			})
 			.addExtraButton((cb) => {
 				cb.setIcon('play')
 					.setTooltip('Apply')
-					.onClick(() => {
-						if (index == -1) this.settings.regExEntires.push(regex);
-						if (regex.description) this.plugin.saveSettings();
+					.onClick(async () => {
+						if (regex.description) {
+							const newkey = regex.description;
+							this.settings.regExEntires[newkey] = regex;
+							if (!this.settings.entryOrder.includes(newkey)) this.settings.entryOrder.push(newkey);
+							await this.plugin.saveSettings();
+						}
 						const res = this.plugin.replace(this.editor, regex);
 						new Notice(res);
 						this.close();
@@ -122,23 +132,24 @@ export class FindAndReplaceModal extends Modal {
 			});
 	}
 
-	private regexRow(container: HTMLElement, index: number) {
-		const regex: RegExEntry = this.settings.regExEntires[index];
-		const desreg = regex.enabledRegEx ? `enabled, Flags: ${regex.flags}` : "disabled";
+	private showOneRegexRow(container: HTMLElement, key: string) {
+		const regex: RegExEntry = this.settings.regExEntires[key]; if (!regex) return;
+		const desreg = regex.enabledRegEx ? `✔, Flags: ${regex.flags}` : "❌";
 		new Setting(container)
-			.setDesc(`Des: ${regex.description}, RegEx: ${desreg}, [${regex.findText} ==> ${regex.replaceText}]`)
+			.setDesc(`Key: ${key},Des: ${regex.description}, RegEx: ${desreg}, [${regex.findText} ==> ${regex.replaceText}]`)
 			.addButton((bu) => {
 				bu.setIcon("chevrons-up")
 				bu.setTooltip("Go up to modify")
-				bu.onClick(() => { this.resetUI(index); });
+				bu.onClick(() => { this.showCreateRegexUI({ key }); });
 			})
 			.addExtraButton((cb) => {
 				cb.setIcon('cross')
 					.setTooltip('Delete')
-					.onClick(() => {
-						this.settings.regExEntires.splice(index, 1);
-						this.plugin.saveSettings();
-						this.resetUI();
+					.onClick(async () => {
+						delete this.settings.regExEntires[key];
+						this.settings.entryOrder.map((val, index) => { if (val == key) this.settings.entryOrder.splice(index, 1) })
+						await this.plugin.saveSettings();
+						this.showStoredRegexUI(true);
 					});
 			})
 			.addExtraButton((cb) => {

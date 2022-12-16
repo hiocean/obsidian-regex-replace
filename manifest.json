@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-regex-replace",
 	"name": "RegEx Find and Replace",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"minAppVersion": "0.15.0",
 	"description": "This is a plugin for regex find&replace in Obsidian.",
 	"author": "hiocean",
