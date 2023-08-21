@@ -2,7 +2,7 @@
  * @Author: hiocean
  * @Date: 2022-12-13 16:34:46
  * @LastEditors: hiocean
- * @LastEditTime: 2022-12-14 17:40:16
+ * @LastEditTime: 2022-12-22 10:35:34
  * @FilePath: \obsidian-regex-replace\src\main.ts
  * @Description: 
  * 
@@ -37,6 +37,9 @@ export default class RegexFindReplacePlugin extends Plugin {
 		if (!pattern.findText) return "The findtext must not be null."
 		const scope = pattern.selectionOnly ? 'selection' : 'document';
 		let nrOfHits = 0;
+
+		if (this.settings.processLineBreak) pattern.replaceText = pattern.replaceText.replace(/\\n/gm, '\n');
+		if (this.settings.processTab) pattern.replaceText = pattern.replaceText.replace(/\\t/gm, '\t');
 
 		if (pattern.enabledRegEx) {
 			logger('Using regex', 8);

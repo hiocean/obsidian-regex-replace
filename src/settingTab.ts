@@ -2,7 +2,7 @@
  * @Author: hiocean
  * @Date: 2022-12-13 16:50:22
  * @LastEditors: hiocean
- * @LastEditTime: 2022-12-15 12:50:40
+ * @LastEditTime: 2022-12-22 10:40:32
  * @FilePath: \obsidian-regex-replace\src\settingTab.ts
  * @Description: 
  * 
@@ -59,5 +59,28 @@ export class RegexFindReplaceSettingTab extends PluginSettingTab {
 					this.plugin.settings.prefillFind = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Process \\n as line break')
+			.setDesc('When \'\\n\' is used in the replace field, a \'line break\' will be inserted accordingly')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.processLineBreak)
+				.onChange(async (value) => {
+					logger('Settings update: processLineBreak: ' + value);
+					this.plugin.settings.processLineBreak = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName('Process \\t as tab')
+			.setDesc('When \'\\t\' is used in the replace field, a \'tab\' will be inserted accordingly')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.processTab)
+				.onChange(async (value) => {
+					logger('Settings update: processTab: ' + value);
+					this.plugin.settings.processTab = value;
+					await this.plugin.saveSettings();
+				}));
 	}
+
+
 }

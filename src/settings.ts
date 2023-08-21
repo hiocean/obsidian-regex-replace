@@ -2,7 +2,7 @@
  * @Author: hiocean
  * @Date: 2022-12-13 17:01:47
  * @LastEditors: hiocean
- * @LastEditTime: 2022-12-16 12:53:44
+ * @LastEditTime: 2022-12-22 10:30:09
  * @FilePath: \obsidian-regex-replace\src\settings.ts
  * @Description: 
  * 
@@ -16,11 +16,15 @@ export interface RegexReplaceSettings {
 	prefillFind: boolean;
 	regExEntires: RegExEntries;
 	entryOrder: string[];
+	processLineBreak: boolean;
+	processTab:boolean;
 }
 export const DEFAULT_SETTINGS: RegexReplaceSettings = {
 	prefillFind: false,
 	regExEntires: {},
-	entryOrder: []
+	entryOrder: [],
+	processLineBreak: true,
+	processTab: true
 };
 export interface RegExEntry {
 	findText: string, replaceText: string,
